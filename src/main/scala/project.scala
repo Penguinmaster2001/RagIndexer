@@ -1,0 +1,5 @@
+//> using scala "3.4.2"
+//> using dep "com.lihaoyi::requests:0.9.3"
+//> using dep "com.lihaoyi::os-lib:0.11.8"
+//> using dep "io.circe::circe-parser:0.14.15"
+//> using dep "io.circe::circe-generic:0.14.15"
