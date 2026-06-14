@@ -18,13 +18,11 @@ import ragindexer.math.*
     println("Indexing...")
     os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
         .filter(os.isFile)
-        .foreach(path =>
-            cache.queueForEmbedding(ChunkKey(path))
-        )
+        .foreach(path => cache.queueForEmbedding(ChunkKey(path)))
 
     cache.cacheQueuedEmbeddings()
     cache.saveCache()
-    
+
     val embeddings = EmbeddedFileSystem(cache, ollamaClient, contentProvider, cosineSim)
 
     println(s"Enter a query:")

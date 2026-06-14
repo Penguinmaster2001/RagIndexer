@@ -13,7 +13,10 @@ class EmbeddedFileSystem(
     contentProvider: ContentProvider,
     similarityMetric: SimilarityMetric
 ) extends EmbeddedContentProvider:
+
     private val embeddings = embeddingProvider.getEmbeddings().toList
+
+
 
     def topK(query: String, k: Int = 1): Iterable[QueryResult] =
         val embedding = embedder.embed(query)

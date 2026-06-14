@@ -12,6 +12,7 @@ import io.circe.syntax.*
 
 
 class OllamaClient() extends Embedder:
+
     private def parseChunk(line: String): Option[ResponseChunk] =
         parse(line).toOption.flatMap: json =>
             val cursor = json.hcursor
@@ -19,6 +20,8 @@ class OllamaClient() extends Embedder:
                 token <- cursor.get[String]("response").toOption
                 done <- cursor.get[Boolean]("done").toOption
             yield ResponseChunk(token, done)
+
+
 
     def embed(text: String): Embedding =
         val res = requests.post(
@@ -31,16 +34,19 @@ class OllamaClient() extends Embedder:
             .map(_.toVector)
             .getOrElse(Vector.empty)
 
+
+
     def embed(text: Iterable[String]): Iterable[Embedding] =
         val res = requests.post(
-            s"$OLLAMA/api/embed",
-            data = OllamaGroupEmbeddingRequest(EMBED_MODEL, Array.from(text)).asJson.noSpaces,
-            headers = Map("Content-Type" -> "application/json")
+          s"$OLLAMA/api/embed",
+          data = OllamaGroupEmbeddingRequest(EMBED_MODEL, Array.from(text)).asJson.noSpaces,
+          headers = Map("Content-Type" -> "application/json")
         )
-        decode[EmbedResponse](res.text())
-            .toOption
+        decode[EmbedResponse](res.text()).toOption
             .flatMap(r => Some(r.embeddings))
             .getOrElse(Iterable.empty)
+
+
 
     def getLlmResponse(prompt: String)(onChunk: ResponseChunk => Unit): Unit =
         println(prompt)
