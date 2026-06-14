@@ -10,25 +10,6 @@ import ragindexer.math.*
 
 
 @main def run() =
-    /*
-        Load embedding cache
-        Walk the filesystem filtered
-        for each file:
-        if it does not have an up to date cache:
-            add path to embedder.toLoad
-        
-        then
-        embedder.embedAll:
-        load files
-        split into chunks
-        once >N chunks gathered or out of files:
-            batch embed
-            append to embeddings list
-        return embeddings
-        
-        then pass the embeddings to the embedding registry, have it save them to file
-     */
-
     val contentProvider = FilesystemContentProvider()
     val ollamaClient = OllamaClient()
     val cache = EmbedRegistry(Some(CACHE_PATH), ollamaClient, contentProvider)
@@ -38,11 +19,12 @@ import ragindexer.math.*
     os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
         .filter(os.isFile)
         .foreach(path =>
-            println(s"Embedding: $path")
-            cache.ensureCached(ChunkKey(path))
+            cache.queueForEmbedding(ChunkKey(path))
         )
 
+    cache.cacheQueuedEmbeddings()
     cache.saveCache()
+    
     val embeddings = EmbeddedFileSystem(cache, ollamaClient, contentProvider, cosineSim)
 
     println(s"Enter a query:")

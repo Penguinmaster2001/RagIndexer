@@ -11,7 +11,9 @@ val INDEX_ROOT =
 
 val OLLAMA = "http://localhost:11434"
 val EMBED_MODEL = "nomic-embed-text-v2-moe"
-val LLM_MODEL = "qwen3.5:2b"
+val LLM_MODEL = "llama3.2:3b"
+
+val EMBED_GROUP_SIZE = 5
 
 
 

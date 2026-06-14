@@ -31,6 +31,17 @@ class OllamaClient() extends Embedder:
             .map(_.toVector)
             .getOrElse(Vector.empty)
 
+    def embed(text: Iterable[String]): Iterable[Embedding] =
+        val res = requests.post(
+            s"$OLLAMA/api/embed",
+            data = OllamaGroupEmbeddingRequest(EMBED_MODEL, Array.from(text)).asJson.noSpaces,
+            headers = Map("Content-Type" -> "application/json")
+        )
+        decode[EmbedResponse](res.text())
+            .toOption
+            .flatMap(r => Some(r.embeddings))
+            .getOrElse(Iterable.empty)
+
     def getLlmResponse(prompt: String)(onChunk: ResponseChunk => Unit): Unit =
         println(prompt)
         val llmRes = requests

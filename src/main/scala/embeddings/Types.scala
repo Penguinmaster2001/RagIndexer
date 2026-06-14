@@ -7,7 +7,8 @@ case class EmbedResponse(embeddings: List[Embedding])
 case class ResponseChunk(content: String, last: Boolean)
 
 case class OllamaEmbeddingRequest(model: String, input: String)
-case class OllamaLlmRequestBody(model: String, prompt: String, stream: Boolean = false)
+case class OllamaGroupEmbeddingRequest(model: String, input: Array[String])
+case class OllamaLlmRequestBody(model: String, prompt: String, stream: Boolean = false, think: Boolean = false)
 
 case class ChunkKey(path: os.Path)
 case class CachedChunk(path: String, embedding: String, timestamp: Long)

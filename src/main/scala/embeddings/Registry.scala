@@ -6,6 +6,8 @@ import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
 import ragindexer.math.*
+import ragindexer.*
+import scala.collection.mutable.Queue
 
 
 
@@ -23,7 +25,21 @@ class EmbedRegistry(cachePath: Option[os.Path] = None, embedder: Embedder, conte
       EmbeddingProvider:
     import EmbedRegistry.*
 
-    var cache = cachePath.fold(Map.empty)(loadCache)
+    private var cache = cachePath.fold(Map.empty)(loadCache)
+    private var embedQueue = Queue.empty[ChunkKey]
+
+    def cacheQueuedEmbeddings(): Unit =
+        embedQueue
+            .grouped(EMBED_GROUP_SIZE)
+            .map(q =>
+                println(s"Group embedding: {$q}")
+                q
+            )
+            .map(q => embedder.embed(q.map(k => contentProvider.getContent(k))).zip(q))
+            .flatten()
+            .foreach(e => addToCache(e._2, e._1))
+
+        embedQueue = Queue.empty
 
     def saveCache(): Unit =
         cachePath.foreach: path =>
@@ -36,12 +52,20 @@ class EmbedRegistry(cachePath: Option[os.Path] = None, embedder: Embedder, conte
             addToCache(key)
             true
 
-    private def addToCache(key: ChunkKey): Vector[Float] =
-        val embedding = embedder.embed(contentProvider.getContent(key))
+    def queueForEmbedding(key: ChunkKey): Boolean =
+        if containsCached(key) then false
+        else
+            embedQueue.addOne(key)
+            true
+
+    private def addToCache(key: ChunkKey): Embedding =
+        addToCache(key, embedder.embed(contentProvider.getContent(key)))
+        
+    private def addToCache(key: ChunkKey, embedding: Embedding): Embedding =
         cache = cache + (key.path.toString -> CachedChunk(
-          path = key.path.toString,
-          timestamp = os.mtime(key.path),
-          embedding = embeddingToBase64(embedding)
+            path = key.path.toString,
+            timestamp = os.mtime(key.path),
+            embedding = embeddingToBase64(embedding)
         ))
         embedding
 

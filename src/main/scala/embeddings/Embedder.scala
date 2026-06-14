@@ -7,6 +7,8 @@ import ragindexer.math.*
 trait Embedder:
     def embed(text: String): Embedding
 
+    def embed(text: Iterable[String]): Iterable[Embedding]
+
 
 
 trait EmbeddingProvider:
