@@ -12,12 +12,29 @@ trait Embedder:
 
 
 trait EmbeddingProvider:
+    def getEmbedding(key: ChunkKey): Option[Embedding]
+
     def getEmbeddings(): Iterator[EmbeddedChunk]
 
 
 
-trait FileEmbeddingProvider:
-    def getEmbedding(key: ChunkKey): Embedding
+trait EmbeddingCache:
+    var cache: Map[String, CachedChunk]
+    
+    def load(path: os.Path): Unit
+
+    def save(path: os.Path): Unit
+
+    def contains(key: ChunkKey): Boolean
+
+    def addOrUpdate(key: ChunkKey, embedding: Embedding): Unit
+
+
+
+trait EmbeddingPipelineBuilder:
+    def queue(key: ChunkKey): this.type
+
+    def queueAll(keySource: Iterable[ChunkKey]): this.type
 
 
 

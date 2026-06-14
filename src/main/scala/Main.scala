@@ -3,6 +3,8 @@ package ragindexer
 
 
 import ragindexer.embeddings.*
+import ragindexer.embeddings.cache.*
+import ragindexer.embeddings.pipeline.*
 import ragindexer.ollama.*
 import ragindexer.content.*
 import ragindexer.math.*
@@ -12,18 +14,26 @@ import ragindexer.math.*
 @main def run() =
     val contentProvider = FilesystemContentProvider()
     val ollamaClient = OllamaClient()
-    val cache = EmbedRegistry(Some(CACHE_PATH), ollamaClient, contentProvider)
     val fileFilter = FileFilter(SEGMENT_BLACKLIST, EXTENSION_WHITELIST)
 
-    println("Indexing...")
-    os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
-        .filter(os.isFile)
-        .foreach(path => cache.queueForEmbedding(ChunkKey(path)))
+    println("Loading")
+    val cache = EmbeddingCache.load(CACHE_PATH)
+    println(s"Loaded ${cache.cache.size}")
 
-    cache.cacheQueuedEmbeddings()
-    cache.saveCache()
+    println("Searching")
+    EmbeddingPipeliner.withPipeline(cache, ollamaClient, contentProvider) { p =>
+        p.queueAll(
+          os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
+              .filter(os.isFile)
+              .map(path => ChunkKey(path))
+        )
+    }
 
-    val embeddings = EmbeddedFileSystem(cache, ollamaClient, contentProvider, cosineSim)
+    println("Saving")
+    cache.save(CACHE_PATH)
+
+    val registry = EmbedRegistry(cache)
+    val embeddings = EmbeddedFileSystem(registry, ollamaClient, contentProvider, cosineSim)
 
     println(s"Enter a query:")
 
