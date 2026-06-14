@@ -4,6 +4,7 @@ package ragindexer
 
 import ragindexer.embeddings.*
 import ragindexer.ollamaclient.*
+import ragindexer.content.FilesystemContentProvider
 
 
 
@@ -12,13 +13,6 @@ def cosineSim(a: Vector[Float], b: Vector[Float]): Float =
     val magA = math.sqrt(a.map(x => x * x).sum).toFloat
     val magB = math.sqrt(b.map(x => x * x).sum).toFloat
     if magA == 0.0 || magB == 0.0 then 0.0 else dot / (magA * magB)
-
-
-
-def extractText(path: os.Path): Option[String] =
-    val ext = path.ext.toLowerCase
-    Option.when(Set("md", "txt", "scala", "py", "cs", "rs", "json").contains(ext)):
-        os.read(path)
 
 
 
@@ -42,59 +36,32 @@ def extractText(path: os.Path): Option[String] =
         then pass the embeddings to the embedding registry, have it save them to file
      */
 
+    val contentProvider = FilesystemContentProvider()
     val ollamaClient = OllamaClient()
-    val cache = EmbedRegistry(Some(CACHE_PATH), ollamaClient)
-
-    val root =
-        sys.env.get("HOME").flatMap(h => Some(os.Path(h))).getOrElse(os.home) / "Documents" / "Job" / "ApplicationDocs"
+    val cache = EmbedRegistry(Some(CACHE_PATH), ollamaClient, contentProvider)
+    val fileFilter = FileFilter(SEGMENT_BLACKLIST, EXTENSION_WHITELIST)
 
     println("Indexing...")
-    val index: Vector[(os.Path, String, Vector[Float])] =
-        os.walk(root)
-            .filter(p =>
-                !p.segments.exists(s =>
-                    Set(
-                      "build",
-                      "obj",
-                      "bin",
-                      "node_modules",
-                      ".git",
-                      ".godot",
-                      ".vscode",
-                      ".zed",
-                      ".github",
-                      ".gradle",
-                      "android",
-                      "Library",
-                      "Temp",
-                      ".venv"
-                    ).contains(s)
-                )
-            )
-            .flatMap(path => extractText(path).map(text => (path, text)))
-            .map((path, text) =>
-                val snippet = text.take(1024)
-                println(s"  Embedding: $path")
-                (path, text, cache.embedCached(snippet, path))
-            )
-            .toVector
+    os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
+        .filter(os.isFile)
+        .foreach(path =>
+            println(s"Embedding: $path")
+            cache.ensureCached(ChunkKey(path))
+        )
 
     cache.saveCache()
+    val embeddings = EmbeddedFileSystem(cache, ollamaClient, contentProvider, cosineSim)
 
-    println(s"Indexed ${index.size} files. Enter a query:")
+    println(s"Enter a query:")
 
     Iterator
         .continually(scala.io.StdIn.readLine())
         .takeWhile(_ != "quit")
         .foreach: query =>
-            val qVec = ollamaClient.embed(query)
-            val topK = index
-                .map((path, text, vec) => (path, text, cosineSim(qVec, vec)))
-                .sortBy(-_._3)
-                .take(3)
+            val topK = embeddings.topK(query, 3)
 
             val context = topK
-                .map((path, text, score) => s"[${path.last} (score: ${"%.3f".format(score)})]\n${text.take(1024)}")
+                .map(r => s"[${r.chunk.key.path.last} (score: ${"%.3f".format(r.score)})]\n${r.content}")
                 .mkString("\n\n---\n\n")
 
             val prompt = s"""Answer based on these documents:\n\n$context\n\nQuestion: $query"""
