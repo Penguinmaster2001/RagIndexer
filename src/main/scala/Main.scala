@@ -3,7 +3,7 @@ package ragindexer
 
 
 import ragindexer.embeddings.*
-import ragindexer.ollamaclient.*
+import ragindexer.ollama.*
 import ragindexer.content.*
 import ragindexer.math.*
 

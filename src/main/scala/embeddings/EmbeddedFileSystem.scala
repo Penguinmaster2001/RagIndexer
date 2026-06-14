@@ -24,4 +24,4 @@ class EmbeddedFileSystem(
             .map(e => (e, similarityMetric(e.embedding, embedding)))
             .sortBy(-_._2)
             .take(k)
-            .map(t => QueryResult(contentProvider.getContent(t._1.key), t._1, t._2))
+            .map((e, s) => QueryResult(contentProvider.getContent(e.key), e, s))

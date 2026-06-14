@@ -36,12 +36,8 @@ class EmbedRegistry(cachePath: Option[os.Path] = None, embedder: Embedder, conte
     def cacheQueuedEmbeddings(): Unit =
         embedQueue
             .grouped(EMBED_GROUP_SIZE)
-            .map(q =>
-                println(s"Group embedding: {$q}")
-                q
-            )
             .flatMap(q => embedder.embed(q.map(k => contentProvider.getContent(k))).zip(q))
-            .foreach(e => addToCache(e._2, e._1))
+            .foreach((e, k) => addToCache(k, e))
 
         embedQueue = Queue.empty
 

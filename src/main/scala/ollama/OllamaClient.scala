@@ -1,4 +1,4 @@
-package ragindexer.ollamaclient
+package ragindexer.ollama
 
 
 
