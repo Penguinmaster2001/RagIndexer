@@ -1,7 +1,9 @@
 package ragindexer.embeddings
 
 
+
 import ragindexer.embeddings.*
+import ragindexer.math.*
 
 
 
@@ -9,7 +11,7 @@ class EmbeddedFileSystem(
     embeddingProvider: EmbeddingProvider,
     embedder: Embedder,
     contentProvider: ContentProvider,
-    similarityMetric: (Embedding, Embedding) => Float
+    similarityMetric: SimilarityMetric
 ) extends EmbeddedContentProvider:
     private val embeddings = embeddingProvider.getEmbeddings().toList
 

@@ -1,9 +1,11 @@
 package ragindexer.embeddings
 
+import ragindexer.math.*
+
 
 
 trait Embedder:
-    def embed(text: String): Vector[Float]
+    def embed(text: String): Embedding
 
 
 
@@ -13,7 +15,7 @@ trait EmbeddingProvider:
 
 
 trait FileEmbeddingProvider:
-    def getEmbedding(key: ChunkKey): Vector[Float]
+    def getEmbedding(key: ChunkKey): Embedding
 
 
 

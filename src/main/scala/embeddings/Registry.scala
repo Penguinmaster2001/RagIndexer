@@ -5,21 +5,7 @@ package ragindexer.embeddings
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
-import java.nio.ByteBuffer
-import java.util.Base64
-
-
-
-def floatsToBase64(v: Vector[Float]): String =
-    val buf = ByteBuffer.allocate(v.length * 4)
-    v.foreach(buf.putFloat)
-    Base64.getEncoder.encodeToString(buf.array())
-
-
-
-def base64ToFloats(s: String): Vector[Float] =
-    val buf = ByteBuffer.wrap(Base64.getDecoder.decode(s))
-    Vector.fill(buf.capacity / 4)(buf.getFloat)
+import ragindexer.math.*
 
 
 
@@ -55,13 +41,13 @@ class EmbedRegistry(cachePath: Option[os.Path] = None, embedder: Embedder, conte
         cache = cache + (key.path.toString -> CachedChunk(
           path = key.path.toString,
           timestamp = os.mtime(key.path),
-          embedding = floatsToBase64(embedding)
+          embedding = embeddingToBase64(embedding)
         ))
         embedding
 
     def getEmbedding(key: ChunkKey): Vector[Float] =
         cache.get(key.path.toString) match
-            case Some(chunk) if chunk.timestamp >= os.mtime(key.path) => base64ToFloats(chunk.embedding)
+            case Some(chunk) if chunk.timestamp >= os.mtime(key.path) => base64ToEmbedding(chunk.embedding)
             case _                                                    => addToCache(key)
 
     def containsCached(key: ChunkKey): Boolean =
@@ -71,4 +57,4 @@ class EmbedRegistry(cachePath: Option[os.Path] = None, embedder: Embedder, conte
 
     def getEmbeddings(): Iterator[EmbeddedChunk] =
         cache.valuesIterator
-            .map(c => EmbeddedChunk(ChunkKey(os.Path(c.path)), base64ToFloats(c.embedding)))
+            .map(c => EmbeddedChunk(ChunkKey(os.Path(c.path)), base64ToEmbedding(c.embedding)))

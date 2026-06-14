@@ -3,6 +3,7 @@ package ragindexer.ollamaclient
 
 
 import ragindexer.*
+import ragindexer.math.*
 import ragindexer.embeddings.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
@@ -19,7 +20,7 @@ class OllamaClient() extends Embedder:
                 done <- cursor.get[Boolean]("done").toOption
             yield ResponseChunk(token, done)
 
-    def embed(text: String): Vector[Float] =
+    def embed(text: String): Embedding =
         val res = requests.post(
           s"$OLLAMA/api/embed",
           data = OllamaEmbeddingRequest(EMBED_MODEL, text).asJson.noSpaces,

@@ -4,15 +4,8 @@ package ragindexer
 
 import ragindexer.embeddings.*
 import ragindexer.ollamaclient.*
-import ragindexer.content.FilesystemContentProvider
-
-
-
-def cosineSim(a: Vector[Float], b: Vector[Float]): Float =
-    val dot = a.zip(b).map(_ * _).sum
-    val magA = math.sqrt(a.map(x => x * x).sum).toFloat
-    val magB = math.sqrt(b.map(x => x * x).sum).toFloat
-    if magA == 0.0 || magB == 0.0 then 0.0 else dot / (magA * magB)
+import ragindexer.content.*
+import ragindexer.math.*
 
 
 
