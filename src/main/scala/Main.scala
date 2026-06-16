@@ -17,7 +17,7 @@ import ragindexer.math.*
         case Right(c) => c
         case Left(e)  => throw RuntimeException(e.getLocalizedMessage(), e.getCause())
 
-    val contentProvider = FilesystemContentProvider()
+    val contentProvider = FilesystemContentProvider(config.ollama)
     val ollamaClient = OllamaClient(config.ollama)
     val fileFilter = FileFilter(config.indexing.blacklist, config.indexing.extensionWhitelist)
 

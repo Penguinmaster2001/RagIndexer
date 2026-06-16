@@ -1,5 +1,7 @@
 package ragindexer.embeddings.pipeline
 
+
+
 import ragindexer.*
 import ragindexer.config.*
 import ragindexer.embeddings.*
@@ -18,7 +20,12 @@ object EmbeddingPipeliner:
 
 
 
-    def withPipeline[A](config: OllamaConfig, cache: EmbeddingCache, embedder: Embedder, contentProvider: ContentProvider)(
+    def withPipeline[A](
+        config: OllamaConfig,
+        cache: EmbeddingCache,
+        embedder: Embedder,
+        contentProvider: ContentProvider
+    )(
         body: EmbeddingPipelineBuilder => A
     ): A =
         val builder = PipelineBuilder(k => !cache.contains(k))
@@ -27,7 +34,11 @@ object EmbeddingPipeliner:
         builder.pendingKeys
             .filterNot(k => cache.contains(k))
             .grouped(config.embedGroupSize)
+            .map(g => {
+                println(s"embedding $g")
+                g
+            })
             .flatMap(q => embedder.embed(q.map(k => contentProvider.getContent(k))).zip(q))
             .foreach((e, k) => cache.addOrUpdate(k, e))
-        
+
         result

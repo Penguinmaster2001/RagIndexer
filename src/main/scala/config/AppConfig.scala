@@ -36,6 +36,7 @@ case class OllamaConfig(
     url: String,
     generationModel: String,
     embedModel: String,
+    embedContextLength: Int,
     embedGroupSize: Int
 )
 
