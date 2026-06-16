@@ -7,11 +7,11 @@ import ragindexer.math.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
+import ragindexer.config.AppConfig
 
 
 
 object EmbeddingCache:
-
     def load(path: os.Path): ragindexer.embeddings.EmbeddingCache =
         val cache = EmbeddingCache()
         cache.load(path)

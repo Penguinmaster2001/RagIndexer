@@ -5,6 +5,7 @@ package ragindexer
 import ragindexer.embeddings.*
 import ragindexer.embeddings.cache.*
 import ragindexer.embeddings.pipeline.*
+import ragindexer.config.*
 import ragindexer.ollama.*
 import ragindexer.content.*
 import ragindexer.math.*
@@ -12,25 +13,29 @@ import ragindexer.math.*
 
 
 @main def run() =
+    val config = AppConfig.load(os.home / ".config" / "RagIndexer" / "config.json") match
+        case Right(c) => c
+        case Left(e)  => throw RuntimeException(e.getLocalizedMessage(), e.getCause())
+
     val contentProvider = FilesystemContentProvider()
-    val ollamaClient = OllamaClient()
-    val fileFilter = FileFilter(SEGMENT_BLACKLIST, EXTENSION_WHITELIST)
+    val ollamaClient = OllamaClient(config.ollama)
+    val fileFilter = FileFilter(config.indexing.blacklist, config.indexing.extensionWhitelist)
 
     println("Loading")
-    val cache = EmbeddingCache.load(CACHE_PATH)
+    val cache = EmbeddingCache.load(AppConfig.getEmbedCachePath(config))
     println(s"Loaded ${cache.cache.size}")
 
     println("Searching")
-    EmbeddingPipeliner.withPipeline(cache, ollamaClient, contentProvider) { p =>
+    EmbeddingPipeliner.withPipeline(config.ollama, cache, ollamaClient, contentProvider) { p =>
         p.queueAll(
-          os.walk(INDEX_ROOT, skip = p => !fileFilter.filter(p))
+          os.walk(config.indexing.indexRoot, skip = p => !fileFilter.filter(p))
               .filter(os.isFile)
               .map(path => ChunkKey(path))
         )
     }
 
     println("Saving")
-    cache.save(CACHE_PATH)
+    cache.save(AppConfig.getEmbedCachePath(config))
 
     val registry = EmbedRegistry(cache)
     val embeddings = EmbeddedFileSystem(registry, ollamaClient, contentProvider, cosineSim)

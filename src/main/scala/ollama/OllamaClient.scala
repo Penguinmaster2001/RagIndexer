@@ -3,6 +3,7 @@ package ragindexer.ollama
 
 
 import ragindexer.*
+import ragindexer.config.*
 import ragindexer.math.*
 import ragindexer.embeddings.*
 import io.circe.generic.auto.*
@@ -11,7 +12,7 @@ import io.circe.syntax.*
 
 
 
-class OllamaClient() extends Embedder:
+class OllamaClient(config: OllamaConfig) extends Embedder:
 
     private def parseChunk(line: String): Option[ResponseChunk] =
         parse(line).toOption.flatMap: json =>
@@ -20,13 +21,14 @@ class OllamaClient() extends Embedder:
                 token <- cursor.get[String]("response").toOption
                 done <- cursor.get[Boolean]("done").toOption
             yield ResponseChunk(token, done)
+        
 
 
 
     def embed(text: String): Embedding =
         val res = requests.post(
-          s"$OLLAMA/api/embed",
-          data = OllamaEmbeddingRequest(EMBED_MODEL, text).asJson.noSpaces,
+          s"${config.url}/api/embed",
+          data = OllamaEmbeddingRequest(config.embedModel, text).asJson.noSpaces,
           headers = Map("Content-Type" -> "application/json")
         )
         decode[EmbedResponse](res.text()).toOption
@@ -38,8 +40,8 @@ class OllamaClient() extends Embedder:
 
     def embed(text: Iterable[String]): Iterable[Embedding] =
         val res = requests.post(
-          s"$OLLAMA/api/embed",
-          data = OllamaGroupEmbeddingRequest(EMBED_MODEL, Array.from(text)).asJson.noSpaces,
+          s"${config.url}/api/embed",
+          data = OllamaGroupEmbeddingRequest(config.embedModel, Array.from(text)).asJson.noSpaces,
           headers = Map("Content-Type" -> "application/json")
         )
         decode[EmbedResponse](res.text()).toOption
@@ -52,8 +54,8 @@ class OllamaClient() extends Embedder:
         println(prompt)
         val llmRes = requests
             .post(
-              s"$OLLAMA/api/generate",
-              data = OllamaLlmRequestBody(LLM_MODEL, prompt, true).asJson.noSpaces,
+              s"${config.url}/api/generate",
+              data = OllamaLlmRequestBody(config.generationModel, prompt, true).asJson.noSpaces,
               headers = Map("Content-Type" -> "application/json"),
               readTimeout = 60000
             )
