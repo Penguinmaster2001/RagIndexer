@@ -8,7 +8,18 @@ case class ResponseChunk(content: String, last: Boolean)
 
 case class OllamaEmbeddingRequest(model: String, input: String)
 case class OllamaGroupEmbeddingRequest(model: String, input: Array[String])
-case class OllamaLlmRequestBody(model: String, prompt: String, stream: Boolean = false, think: Boolean = false)
+
+
+
+case class OllamaLlmRequestBody(
+    model: String,
+    prompt: String,
+    stream: Boolean = false,
+    think: Boolean = false,
+    options: Map[String, Int] = Map("num_ctx" -> 8192)
+)
+
+
 
 case class ChunkKey(path: os.Path)
 case class CachedChunk(path: String, embedding: String, timestamp: Long)

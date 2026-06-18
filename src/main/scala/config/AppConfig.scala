@@ -37,7 +37,8 @@ case class OllamaConfig(
     generationModel: String,
     embedModel: String,
     embedContextLength: Int,
-    embedGroupSize: Int
+    embedGroupSize: Int,
+    queryResultCount: Int
 )
 
 

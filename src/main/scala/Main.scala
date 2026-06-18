@@ -81,7 +81,7 @@ def buildEmbeddings(
 
 
 
-def run(embeddings: EmbeddedContentProvider, llm: LlmProvider): Unit =
+def run(config: AppConfig, embeddings: EmbeddedContentProvider, llm: LlmProvider): Unit =
 
     println(s"Enter a question:")
 
@@ -89,14 +89,32 @@ def run(embeddings: EmbeddedContentProvider, llm: LlmProvider): Unit =
         .continually(scala.io.StdIn.readLine())
         .takeWhile(_ != "quit")
         .foreach: query =>
-            val topK = embeddings.topK(query, 3)
+            val topK = embeddings.topK(query, config.ollama.queryResultCount)
+
+            topK.foreach(r => println(r.chunk.key))
+
+            val MaxContextChars = 6000
 
             val context = topK
-                .map(r => s"[${r.chunk.key.path.last} (score: ${"%.3f".format(r.score)})]\n${r.content}")
+                .scanLeft(("", 0)) { case ((_, total), r) =>
+                    val content = s"[${r.chunk.key.path.last}]\n${r.content}"
+                    (content, total + content.length)
+                }
+                .drop(1)
+                .takeWhile(_._2 <= MaxContextChars)
+                .map(_._1)
                 .mkString("\n\n---\n\n")
 
-            val prompt = s"""Answer based on these documents:\n\n$context\n\nQuestion: $query"""
-            println(prompt)
+            val prompt = s"""You are a personal assistant with access to the user's documents.
+Answer the question using ONLY the provided documents. Be specific and cite which document each fact comes from.
+If the documents don't contain enough information to answer, say so clearly.
+
+DOCUMENTS:
+$context
+
+QUESTION: $query
+
+ANSWER:"""
             llm.generate(prompt): chunk =>
                 print(chunk.content)
                 Console.flush()
@@ -120,4 +138,4 @@ def run(embeddings: EmbeddedContentProvider, llm: LlmProvider): Unit =
             val cache = loadCache(AppConfig.getEmbedCachePath(config))
             if mode == RunMode.Full then indexAndSearch(config, cache, ollamaClient, contentProvider, fileFilter)
             val embeddings = buildEmbeddings(cache, ollamaClient, contentProvider)
-            run(embeddings, ollamaClient)
+            run(config, embeddings, ollamaClient)
