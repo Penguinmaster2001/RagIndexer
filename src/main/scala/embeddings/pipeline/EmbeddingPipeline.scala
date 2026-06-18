@@ -21,7 +21,7 @@ object EmbeddingPipeliner:
 
 
     def withPipeline[A](
-        config: OllamaConfig,
+        config: AppConfig,
         cache: EmbeddingStore,
         embedder: Embedder,
         contentProvider: ContentProvider
@@ -31,14 +31,22 @@ object EmbeddingPipeliner:
         val builder = PipelineBuilder(k => !cache.contains(k))
         val result = body(builder)
 
+        val count = builder.pendingKeys
+            .filterNot(k => cache.contains(k))
+            .grouped(config.ollama.embedGroupSize)
+            .length
+        println(s"Embedding $count groups.")
+
         builder.pendingKeys
             .filterNot(k => cache.contains(k))
-            .grouped(config.embedGroupSize)
-            .map(g => {
-                println(s"embedding $g")
-                g
+            .grouped(config.ollama.embedGroupSize)
+            .zipWithIndex
+            .foreach((g, i) => {
+                println(s"Embedding group ${i + 1}/$count")
+                embedder.embed(g.map(k => contentProvider.getContent(k)))
+                    .zip(g)
+                    .foreach((e, k) => cache.addOrUpdate(k, e))
+                    cache.save(AppConfig.getEmbedCachePath(config))
             })
-            .flatMap(q => embedder.embed(q.map(k => contentProvider.getContent(k))).zip(q))
-            .foreach((e, k) => cache.addOrUpdate(k, e))
 
         result

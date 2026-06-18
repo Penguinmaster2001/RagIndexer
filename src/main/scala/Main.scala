@@ -35,7 +35,7 @@ def walkFiles(config: IndexingConfig, fileFilter: FileFilter): Iterable[os.Path]
 
 def listFiles(config: AppConfig, fileFilter: FileFilter): Unit =
     var count = 0
-    walkFiles(config.indexing, fileFilter).foreach(p =>{
+    walkFiles(config.indexing, fileFilter).foreach(p => {
         println(s"Path: $p")
         count += 1
     })
@@ -59,7 +59,7 @@ def indexAndSearch(
     fileFilter: FileFilter
 ): Unit =
     println("Searching")
-    EmbeddingPipeliner.withPipeline(config.ollama, cache, embedder, contentProvider) { p =>
+    EmbeddingPipeliner.withPipeline(config, cache, embedder, contentProvider) { p =>
         p.queueAll(
           walkFiles(config.indexing, fileFilter)
               .map(path => ChunkKey(path))
@@ -96,6 +96,7 @@ def run(embeddings: EmbeddedContentProvider, llm: LlmProvider): Unit =
                 .mkString("\n\n---\n\n")
 
             val prompt = s"""Answer based on these documents:\n\n$context\n\nQuestion: $query"""
+            println(prompt)
             llm.generate(prompt): chunk =>
                 print(chunk.content)
                 Console.flush()

@@ -17,4 +17,8 @@ class FileFilter(val segmentBlacklist: Set[String], val extensionWhitelist: Set[
 
 
     def filter(path: os.Path): Boolean =
-        !skip(path) && matcher.matches(Paths.get(path.toURI))
+        val size = os.size(path)
+        if size > 200_000 then
+            println(s"Skipping large file (${size / 1024}KB): $path")
+            false
+        else !skip(path) && matcher.matches(Paths.get(path.toURI))

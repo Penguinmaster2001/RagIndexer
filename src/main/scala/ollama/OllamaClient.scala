@@ -28,7 +28,8 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
         val res = requests.post(
           s"${config.url}/api/embed",
           data = OllamaEmbeddingRequest(config.embedModel, text).asJson.noSpaces,
-          headers = Map("Content-Type" -> "application/json")
+          headers = Map("Content-Type" -> "application/json"),
+          readTimeout = 60000
         )
         decode[EmbedResponse](res.text()).toOption
             .flatMap(_.embeddings.headOption)
@@ -41,7 +42,8 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
         val res = requests.post(
           s"${config.url}/api/embed",
           data = OllamaGroupEmbeddingRequest(config.embedModel, Array.from(text)).asJson.noSpaces,
-          headers = Map("Content-Type" -> "application/json")
+          headers = Map("Content-Type" -> "application/json"),
+          readTimeout = 60000
         )
         decode[EmbedResponse](res.text()).toOption
             .flatMap(r => Some(r.embeddings))
