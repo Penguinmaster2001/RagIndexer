@@ -12,14 +12,14 @@ import ragindexer.config.AppConfig
 
 
 object EmbeddingCache:
-    def load(path: os.Path): ragindexer.embeddings.EmbeddingCache =
+    def load(path: os.Path): EmbeddingStore =
         val cache = EmbeddingCache()
         cache.load(path)
         cache
 
 
 
-class EmbeddingCache extends ragindexer.embeddings.EmbeddingCache:
+class EmbeddingCache extends EmbeddingStore:
     var cache = Map.empty[String, CachedChunk]
 
 

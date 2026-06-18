@@ -12,7 +12,7 @@ import io.circe.syntax.*
 
 
 
-class OllamaClient(config: OllamaConfig) extends Embedder:
+class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
 
     private def parseChunk(line: String): Option[ResponseChunk] =
         parse(line).toOption.flatMap: json =>
@@ -21,7 +21,6 @@ class OllamaClient(config: OllamaConfig) extends Embedder:
                 token <- cursor.get[String]("response").toOption
                 done <- cursor.get[Boolean]("done").toOption
             yield ResponseChunk(token, done)
-        
 
 
 
@@ -50,8 +49,7 @@ class OllamaClient(config: OllamaConfig) extends Embedder:
 
 
 
-    def getLlmResponse(prompt: String)(onChunk: ResponseChunk => Unit): Unit =
-        println(prompt)
+    def generate(prompt: String)(onChunk: ResponseChunk => Unit): Unit =
         val llmRes = requests
             .post(
               s"${config.url}/api/generate",

@@ -11,6 +11,12 @@ trait Embedder:
 
 
 
+
+trait LlmProvider:
+    def generate(prompt: String)(onChunk: ResponseChunk => Unit): Unit
+
+
+
 trait EmbeddingProvider:
     def getEmbedding(key: ChunkKey): Option[Embedding]
 
@@ -18,7 +24,7 @@ trait EmbeddingProvider:
 
 
 
-trait EmbeddingCache:
+trait EmbeddingStore:
     var cache: Map[String, CachedChunk]
     
     def load(path: os.Path): Unit

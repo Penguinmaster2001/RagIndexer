@@ -10,7 +10,7 @@ import ragindexer.*
 
 
 
-class EmbedRegistry(cache: EmbeddingCache) extends EmbeddingProvider:
+class EmbedRegistry(cache: EmbeddingStore) extends EmbeddingProvider:
 
     def getEmbedding(key: ChunkKey): Option[Embedding] =
         cache.cache.get(key.path.toString).map(c => base64ToEmbedding(c.embedding))

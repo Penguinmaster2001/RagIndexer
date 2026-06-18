@@ -22,7 +22,7 @@ object EmbeddingPipeliner:
 
     def withPipeline[A](
         config: OllamaConfig,
-        cache: EmbeddingCache,
+        cache: EmbeddingStore,
         embedder: Embedder,
         contentProvider: ContentProvider
     )(

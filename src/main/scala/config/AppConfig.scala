@@ -45,7 +45,8 @@ case class OllamaConfig(
 case class IndexingConfig(
     indexRoot: os.Path,
     blacklist: Set[String],
-    extensionWhitelist: Set[String]
+    extensionWhitelist: Set[String],
+    glob: String
 )
 
 
