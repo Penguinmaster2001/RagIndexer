@@ -9,10 +9,11 @@ import ragindexer.embeddings.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
+import io.circe.Json
 
 
 
-class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
+class OllamaClient(config: OllamaConfig, timeout: Int = 600000) extends Embedder, LlmProvider:
 
     private def parseChunk(line: String): Option[ResponseChunk] =
         parse(line).toOption.flatMap: json =>
@@ -29,7 +30,7 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
           s"${config.url}/api/embed",
           data = OllamaEmbeddingRequest(config.embedModel, text).asJson.noSpaces,
           headers = Map("Content-Type" -> "application/json"),
-          readTimeout = 600000
+          readTimeout = timeout
         )
         decode[EmbedResponse](res.text()).toOption
             .flatMap(_.embeddings.headOption)
@@ -43,7 +44,7 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
           s"${config.url}/api/embed",
           data = OllamaGroupEmbeddingRequest(config.embedModel, Array.from(text)).asJson.noSpaces,
           headers = Map("Content-Type" -> "application/json"),
-          readTimeout = 600000
+          readTimeout = timeout
         )
         decode[EmbedResponse](res.text()).toOption
             .flatMap(r => Some(r.embeddings))
@@ -52,12 +53,12 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
 
 
     def generate(prompt: String)(onChunk: ResponseChunk => Unit): Unit =
-        val llmRes = requests
+        requests
             .post(
               s"${config.url}/api/generate",
               data = OllamaLlmRequestBody(config.generationModel, prompt, true).asJson.noSpaces,
               headers = Map("Content-Type" -> "application/json"),
-              readTimeout = 600000
+              readTimeout = timeout
             )
             .readBytesThrough(stream =>
                 scala.io.Source
@@ -66,3 +67,37 @@ class OllamaClient(config: OllamaConfig) extends Embedder, LlmProvider:
                     .flatMap(parseChunk)
                     .foreach(onChunk)
             )
+
+
+
+    def generateStructured(prompt: String): Either[(io.circe.Error, String), List[String]] =
+        val schema = """{"type":"array","items":{"type":"string"}}"""
+        val body = OllamaLlmStructuredRequestBody(
+          config.generationModel,
+          prompt,
+          stream = false,
+          think = false,
+          format = parse(schema).getOrElse(Json.Null)
+        )
+
+        var result =
+            requests
+                .post(
+                  s"${config.url}/api/generate",
+                  data = body.asJson.noSpaces,
+                  headers = Map("Content-Type" -> "application/json"),
+                  readTimeout = timeout
+                )
+                .readBytesThrough(stream =>
+                    scala.io.Source
+                        .fromInputStream(stream)
+                        .getLines()
+                        .flatMap(parseChunk)
+                        .flatMap(l => l.content)
+                        .mkString
+                )
+        println(result)
+
+        decode[List[String]](result) match
+            case Left(err)    => Left((err, result))
+            case Right(value) => Right(value)

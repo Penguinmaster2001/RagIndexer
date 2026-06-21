@@ -1,6 +1,11 @@
 package ragindexer.embeddings
 
+
+
 import ragindexer.math.*
+import io.circe.Json
+
+
 
 case class EmbedRequest(model: String, input: String)
 case class EmbedResponse(embeddings: List[Embedding])
@@ -16,6 +21,17 @@ case class OllamaLlmRequestBody(
     prompt: String,
     stream: Boolean = false,
     think: Boolean = false,
+    options: Map[String, Int] = Map("num_ctx" -> 8192)
+)
+
+
+
+case class OllamaLlmStructuredRequestBody(
+    model: String,
+    prompt: String,
+    stream: Boolean = false,
+    think: Boolean = false,
+    format: Json,
     options: Map[String, Int] = Map("num_ctx" -> 8192)
 )
 

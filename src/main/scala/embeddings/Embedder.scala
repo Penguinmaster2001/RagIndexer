@@ -11,9 +11,10 @@ trait Embedder:
 
 
 
-
 trait LlmProvider:
     def generate(prompt: String)(onChunk: ResponseChunk => Unit): Unit
+
+    def generateStructured(prompt: String): Either[(io.circe.Error, String), List[String]]
 
 
 
@@ -26,7 +27,7 @@ trait EmbeddingProvider:
 
 trait EmbeddingStore:
     var cache: Map[String, CachedChunk]
-    
+
     def load(path: os.Path): Unit
 
     def save(path: os.Path): Unit
